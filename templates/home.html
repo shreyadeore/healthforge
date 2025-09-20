@@ -1,0 +1,253 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HealthForge - HealthBot</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Poppins', sans-serif; background-color: #f8fbff; margin: 0; padding: 0; }
+/* Navbar */
+.navbar { background: linear-gradient(90deg, #007bff, #00aaff); box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 0.8rem 2rem; }
+.navbar-brand { font-size: 1.8rem; font-weight: 700; color: white !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); }
+/* Slider */
+#healthCarousel { margin: 30px auto; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.15); max-width: 95%; }
+.carousel-item img { height: 450px; object-fit: cover; padding: 10px; }
+/* HealthBot Section */
+#healthbotSection { text-align: center; margin: 40px auto; padding: 30px 20px; max-width: 500px; background: white; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+
+/* --- FIX: Elements are given a z-index to stay ON TOP of the animation --- */
+/* Find this rule in your <style> block */
+#healthbotSection h2 {
+    font-size: 2rem;
+    font-weight: 500;
+    margin-bottom: 60px; /* INCREASED from 20px to 40px */
+    color: #007bff;
+}.healthbot-actions, #callStatusWidget {
+    position: relative;
+    z-index: 5;
+}
+
+.doctor-avatar-widget { width: 120px; height: 120px; border-radius: 50%; position: relative; margin: 0 auto 20px auto; border: 4px solid #007bff; display: flex; justify-content: center; align-items: center; }
+.doctor-avatar-widget img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; z-index: 2; }
+
+/* --- FIX: Animation is now a solid, filled circle --- */
+.pulseWidget {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    /* Use a background-color for a solid ring */
+    background-color: rgb(127, 2, 245);
+    transform: translate(-50%, -50%);
+    z-index: 1; /* Keep rings behind the doctor image */
+    display: none;
+    animation: pulsate-out 2.5s ease-out infinite;
+}
+@keyframes pulsate-out {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        /* Start with higher opacity for a more solid look */
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(2.5);
+        opacity: 0;
+    }
+}
+#pulseWidget2 { animation-delay: 0.8s; }
+#pulseWidget3 { animation-delay: 1.6s; }
+
+#callStatusWidget { color:purple; font-weight:bold; text-align:center; font-size:1rem; margin-bottom:15px; min-height: 1.2rem; }
+.btn-healthbot { width:120px; font-size:1rem; padding:10px; margin:0 10px; border-radius:50px; transition: transform 0.2s; }
+.btn-healthbot:hover { transform: scale(1.05); }
+/* Right-side chat panel */
+#sideChatPanel { position: fixed; top:0; right:-400px; width:400px; height:100%; background:white; box-shadow:-4px 0 15px rgba(0,0,0,0.2); z-index:9998; transition:right 0.3s ease; display:flex; flex-direction:column; border-left:2px solid #007bff; }
+#sideChatHeader { background:#007bff; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; font-weight:bold; }
+#sideChatContent { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; }
+#sideChatBox { flex:1; overflow-y:auto; border:1px solid #e1e1e1; border-radius:8px; padding:10px; background:#f9f9f9; margin-bottom:10px; }
+.chat-input-widget { display:flex; gap:5px; }
+.chat-input-widget input { flex:1; padding:5px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg"><div class="container"><a class="navbar-brand" href="#">HealthForge</a></div></nav>
+
+<div id="healthCarousel" class="carousel slide" data-bs-ride="carousel">
+<div class="carousel-inner">
+<div class="carousel-item active"><img src="{% static 'images/img1.jpg' %}" class="d-block w-100"></div>
+<div class="carousel-item"><img src="{% static 'images/img2.jpg' %}" class="d-block w-100"></div>
+<div class="carousel-item"><img src="{% static 'images/img3.jpg' %}" class="d-block w-100"></div>
+</div>
+<button class="carousel-control-prev" type="button" data-bs-target="#healthCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon"></span></button>
+<button class="carousel-control-next" type="button" data-bs-target="#healthCarousel" data-bs-slide="next"><span class="carousel-control-next-icon"></span></button>
+</div>
+
+<div id="healthbotSection">
+<h2 style="color:#00aaff;">HealthBot: Your Virtual Companion</h2>
+<div class="doctor-avatar-widget">
+    <img src="{% static 'images/doctor.png' %}">
+    <div class="pulseWidget" id="pulseWidget"></div>
+    <div class="pulseWidget" id="pulseWidget2"></div>
+    <div class="pulseWidget" id="pulseWidget3"></div>
+</div>
+<div id="callStatusWidget"></div>
+<div class="d-flex justify-content-center healthbot-actions">
+    <button class="btn btn-primary btn-healthbot" onclick="toggleSideChat()">Chat</button>
+    <button class="btn btn-success btn-healthbot" id="aiCallBtn" onclick="toggleAICall()">AI Call</button>
+</div>
+</div>
+
+<div id="sideChatPanel">
+<div id="sideChatHeader"><span>HealthBot 🤖 Chat</span><button onclick="toggleSideChat()">✖</button></div>
+<div id="sideChatContent">
+    <div id="sideChatBox"><p><b>HealthBot:</b> Hello! How can I help you today?</p></div>
+    <div class="chat-input-widget">
+        <input type="text" id="sideUserInput" placeholder="Type your question...">
+        <button class="btn btn-primary btn-sm" onclick="sendSideMessage()">Send</button>
+        <button class="btn btn-secondary btn-sm" onclick="startVoiceInput()">🎤 Speak</button>
+    </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// No changes needed in the JavaScript. It works perfectly.
+const pulseWidget = document.getElementById("pulseWidget");
+const pulseWidget2 = document.getElementById("pulseWidget2");
+const pulseWidget3 = document.getElementById("pulseWidget3");
+const callStatusWidget = document.getElementById("callStatusWidget");
+const aiCallBtn = document.getElementById("aiCallBtn");
+const sideChatPanel = document.getElementById("sideChatPanel");
+const sideChatBox = document.getElementById("sideChatBox");
+const sideUserInput = document.getElementById("sideUserInput");
+
+let aiRecognition = null;
+let aiCallActive = false;
+let speakingAudio = null;
+let speechBuffer = "";
+
+function toggleSideChat(){ sideChatPanel.style.right = sideChatPanel.style.right==="0px"? "-400px":"0px"; }
+
+function cleanReply(text){ return text.replace(/[*_#`]/g,"").replace(/\s+/g," ").trim(); }
+
+function sendSideMessage(){
+    if(!sideUserInput.value.trim())return;
+    const userText = sideUserInput.value;
+    const userMsg = document.createElement("p");
+    userMsg.innerHTML = `<b>You:</b> ${userText}`;
+    sideChatBox.appendChild(userMsg);
+
+    const botMsg = document.createElement("p");
+    botMsg.innerHTML = `<b>HealthBot:</b> Thinking... 🤖`;
+    sideChatBox.appendChild(botMsg);
+    sideChatBox.scrollTop = sideChatBox.scrollHeight;
+    sideUserInput.value = "";
+
+    fetch("/api/chat/", {
+        method:"POST",
+        headers:{"Content-Type":"application/json", 'X-CSRFToken': '{{ csrf_token }}'},
+        body:JSON.stringify({message:userText})
+    }).then(res=>res.json()).then(data=>{
+        const reply = cleanReply(data.reply || "Sorry, I didn’t understand.");
+        botMsg.innerHTML = `<b>HealthBot:</b> ${reply}`;
+        sideChatBox.scrollTop = sideChatBox.scrollHeight;
+    }).catch(err=>{
+        botMsg.innerHTML = `<b>HealthBot:</b> Sorry, something went wrong.`;
+        console.error(err);
+    });
+}
+
+function startVoiceInput(){
+    if(!('webkitSpeechRecognition' in window)){ alert("Your browser does not support voice input"); return; }
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang='en-US'; recognition.interimResults=false; recognition.maxAlternatives=1;
+    recognition.start();
+    recognition.onresult = function(event){ sideUserInput.value = event.results[0][0].transcript; sendSideMessage(); }
+    recognition.onerror = function(event){ console.error("Voice input error:", event.error); }
+}
+
+function toggleAICall(){
+    if(!aiCallActive){
+        startAICall();
+        aiCallBtn.innerText="End Call";
+        aiCallBtn.classList.remove('btn-success');
+        aiCallBtn.classList.add('btn-danger');
+    } else {
+        stopAICall();
+        aiCallBtn.innerText="AI Call";
+        aiCallBtn.classList.remove('btn-danger');
+        aiCallBtn.classList.add('btn-success');
+    }
+}
+
+function startAICall(){
+    if(!('webkitSpeechRecognition' in window)){ alert("Your browser does not support voice input"); return; }
+    aiCallActive = true;
+    pulseWidget.style.display = "block";
+    pulseWidget2.style.display = "block";
+    pulseWidget3.style.display = "block";
+
+    callStatusWidget.innerText = "🎧 Listening...";
+    speechBuffer = "";
+    aiRecognition = new webkitSpeechRecognition();
+    aiRecognition.lang = 'en-US';
+    aiRecognition.interimResults = true;
+    aiRecognition.maxAlternatives = 1;
+    aiRecognition.continuous = true;
+    aiRecognition.start();
+
+    aiRecognition.onresult = function(event){
+        let interimTranscript = "";
+        for(let i=event.resultIndex; i<event.results.length; i++){
+            interimTranscript += event.results[i][0].transcript;
+        }
+        speechBuffer = interimTranscript.trim();
+
+        if(event.results[event.results.length-1].isFinal){
+            callStatusWidget.innerText = "🤔 Thinking...";
+            aiRecognition.stop();
+            fetch("/ai_call/", {
+                method:"POST",
+                headers:{"Content-Type":"application/json", 'X-CSRFToken': '{{ csrf_token }}'},
+                body:JSON.stringify({message:speechBuffer})
+            }).then(res=>res.json()).then(data=>{
+                if(speakingAudio){ speakingAudio.pause(); speakingAudio=null; }
+                if(data.audio_url){
+                    callStatusWidget.innerText="🗣️ Answering...";
+                    speakingAudio = new Audio(data.audio_url);
+                    speakingAudio.onended = ()=>{
+                        if(aiCallActive){ callStatusWidget.innerText="🎧 Listening..."; aiRecognition.start(); }
+                    }
+                    speakingAudio.play();
+                } else { if(aiCallActive){ callStatusWidget.innerText="🎧 Listening..."; aiRecognition.start(); } }
+            }).catch(err=>{ console.error(err); if(aiCallActive) aiRecognition.start(); });
+        }
+    }
+
+    aiRecognition.onerror = function(event){
+        console.error(event.error);
+        callStatusWidget.innerText="❌ Voice recognition error";
+        stopAICall();
+    }
+}
+
+function stopAICall(){
+    aiCallActive = false;
+    if(aiRecognition){ aiRecognition.stop(); aiRecognition=null; }
+    pulseWidget.style.display="none";
+    pulseWidget2.style.display="none";
+    pulseWidget3.style.display="none";
+    callStatusWidget.innerText = "";
+    if(speakingAudio){ speakingAudio.pause(); speakingAudio=null; }
+    speechBuffer="";
+}
+</script>
+</body>
+</html>
