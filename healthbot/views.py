@@ -33,7 +33,7 @@ def chat_with_healthbot(request):
 
         # Call Gemini AI with short, concise instructions
         model = genai.GenerativeModel("gemini-2.0-flash")
-        prompt = f"Answer the user's health question concisely and precisely in short text. Avoid long explanations. User asked: {user_message}"
+        prompt = f"You are a healthcare bot. Answer only healthcare related questions like a human.If unrelated say:Sorry! i can give only healthcare realated guidance.Answer the user's health question concisely and precisely in short text. Avoid long explanations. User asked: {user_message}"
         response = model.generate_content(prompt)
         bot_reply = response.text if response and hasattr(response, "text") else "Sorry, I didn't understand."
 
@@ -66,7 +66,7 @@ def ai_call(request):
             return JsonResponse({"error": "No input detected"})
 
         model = genai.GenerativeModel("gemini-2.0-flash")
-        prompt = f"Answer user voice input naturally like a human, concise and understandable. Only voice output, no text formatting. User said: {user_message}"
+        prompt = f"You are a healthcare bot. Answer only healthcare related questions like a human.If unrelated say:Sorry! i can give only healthcare realated guidance.Answer user voice input naturally like a human, concise and understandable. Only voice output, no text formatting. User said: {user_message}"
         response = model.generate_content(prompt)
         bot_reply = response.text if response and hasattr(response, "text") else "Sorry, I didn't understand."
 
